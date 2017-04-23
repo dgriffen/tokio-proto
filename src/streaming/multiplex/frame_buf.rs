@@ -61,6 +61,10 @@ impl<T> FrameBuf<T> {
         unsafe { &*self.inner.get() }.allocated
     }
 
+    pub fn full(&self) -> bool {
+        unsafe { &*self.inner.get() }.full()
+    }
+
     pub fn deque(&self) -> FrameDeque<T> {
         FrameDeque {
             inner: self.inner.clone(),
@@ -208,6 +212,27 @@ impl<T> Inner<T> {
             });
 
             Some(&mut block[idx])
+        }
+    }
+
+    fn full(&self) -> bool {
+        unsafe {
+            if let Some(_) = self.free.as_mut() {
+                return false;
+            }
+
+            let needs_more_space = {
+                if self.blocks.is_empty() {
+                    true
+                } else {
+                    let block = self.blocks.last().unwrap();
+                    block.len() == block.capacity()
+                }
+            };
+
+            let can_grow = self.allocated < self.max_capacity;
+
+            needs_more_space && !can_grow
         }
     }
 

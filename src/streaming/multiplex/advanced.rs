@@ -304,7 +304,9 @@ impl<T> Multiplex<T> where T: Dispatch {
         while self.run {
             // TODO: Only read frames if there is available space in the frame
             // buffer
-            if let Async::Ready(frame) = try!(self.dispatch.get_mut().inner.transport().poll()) {
+            if self.frame_buf.full() {
+                break;
+            } else if let Async::Ready(frame) = try!(self.dispatch.get_mut().inner.transport().poll()) {
                 try!(self.process_out_frame(frame));
             } else {
                 break;
